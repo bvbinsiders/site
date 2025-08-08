@@ -1,127 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
   <title>BVBInsiders Confessions</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
-    textarea { width: 100%; height: 80px; margin-bottom: 10px; }
-    button { padding: 10px; cursor: pointer; }
-    .confession { background: white; padding: 10px; border-radius: 5px; margin-top: 10px; }
-    .delete-btn { color: red; cursor: pointer; float: right; }
-  </style>
+  <meta charset="UTF-8" />
 </head>
 <body>
-  <h1>BVBInsiders 📝</h1>
-
-  <div id="user-section">
-    <h3>Post Your Confession</h3>
-    <textarea id="confessionText" placeholder="Write something..."></textarea>
-    <button onclick="postConfession()">Submit</button>
-
-    <h3>Your Confessions</h3>
-    <div id="myConfessions"></div>
-  </div>
-
-  <div id="admin-section" style="display:none;">
-    <h2>Admin Panel</h2>
-    <button onclick="logout()">Logout</button>
-    <div id="allConfessions"></div>
-  </div>
-
-  <div id="login-section">
-    <h3>Admin Login</h3>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="adminLogin()">Login</button>
-  </div>
+  <h1>Submit Your Confession</h1>
+  <textarea id="confessionText" placeholder="Write your confession here..." rows="6" cols="40"></textarea><br>
+  <button id="submitBtn">Submit</button>
+  <p id="status"></p>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, where, getDocs, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-    // TODO: Replace with your Firebase config
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyC4tGaHW1D3BUkKPsp46PVeXbcVjozLbjc",
+      authDomain: "bvbinsiders.firebaseapp.com",
+      projectId: "bvbinsiders",
+      storageBucket: "bvbinsiders.appspot.com",
+      messagingSenderId: "611204497520",
+      appId: "1:611204497520:web:a12419c7f0ff81e019f4b5",
+      measurementId: "G-PM701CN1FR"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app);
 
-    const userId = localStorage.getItem("confessionUserId") || crypto.randomUUID();
-    localStorage.setItem("confessionUserId", userId);
-
-    async function postConfession() {
+    document.getElementById("submitBtn").addEventListener("click", async () => {
       const text = document.getElementById("confessionText").value.trim();
-      if (!text) return alert("Write something first!");
-      await addDoc(collection(db, "confessions"), {
-        text,
-        ownerId: userId,
-        timestamp: new Date()
-      });
-      document.getElementById("confessionText").value = "";
-    }
-
-    async function loadMyConfessions() {
-      const q = query(collection(db, "confessions"), where("ownerId", "==", userId));
-      onSnapshot(q, snapshot => {
-        const list = document.getElementById("myConfessions");
-        list.innerHTML = "";
-        snapshot.forEach(doc => {
-          list.innerHTML += `<div class="confession">${doc.data().text}</div>`;
-        });
-      });
-    }
-
-    async function adminLogin() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (e) {
-        alert("Login failed: " + e.message);
+      if (!text) {
+        document.getElementById("status").innerText = "Please write something!";
+        return;
       }
-    }
 
-    function logout() {
-      signOut(auth);
-    }
-
-    async function loadAllConfessions() {
-      const q = collection(db, "confessions");
-      onSnapshot(q, snapshot => {
-        const list = document.getElementById("allConfessions");
-        list.innerHTML = "";
-        snapshot.forEach(docSnap => {
-          list.innerHTML += `<div class="confession">${docSnap.data().text} <span class="delete-btn" onclick="deleteConfession('${docSnap.id}')">🗑️</span></div>`;
+      try {
+        await addDoc(collection(db, "confessions"), {
+          text: text,
+          timestamp: serverTimestamp()
         });
-      });
-    }
-
-    window.deleteConfession = async function(id) {
-      await deleteDoc(doc(db, "confessions", id));
-    }
-
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        document.getElementById("admin-section").style.display = "block";
-        document.getElementById("login-section").style.display = "none";
-        loadAllConfessions();
-      } else {
-        document.getElementById("admin-section").style.display = "none";
-        document.getElementById("login-section").style.display = "block";
-        loadMyConfessions();
+        document.getElementById("status").innerText = "Confession submitted!";
+        document.getElementById("confessionText").value = "";
+      } catch (error) {
+        console.error(error);
+        document.getElementById("status").innerText = "Error submitting confession.";
       }
     });
-
-    loadMyConfessions();
   </script>
 </body>
 </html>
