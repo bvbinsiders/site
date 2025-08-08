@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin - BVBInsiders</title>
+  <meta charset="UTF-8" />
+</head>
+<body>
+  <h1>Admin Confessions</h1>
+  <input type="email" id="email" placeholder="Admin Email"><br>
+  <input type="password" id="password" placeholder="Admin Password"><br>
+  <button id="loginBtn">Login</button>
+  <p id="loginStatus"></p>
+
+  <div id="confessions" style="display:none;">
+    <h2>All Confessions</h2>
+    <ul id="confessionList"></ul>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, deleteDoc, doc, orderBy, query } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4tGaHW1D3BUkKPsp46PVeXbcVjozLbjc",
+      authDomain: "bvbinsiders.firebaseapp.com",
+      projectId: "bvbinsiders",
+      storageBucket: "bvbinsiders.appspot.com",
+      messagingSenderId: "611204497520",
+      appId: "1:611204497520:web:a12419c7f0ff81e019f4b5",
+      measurementId: "G-PM701CN1FR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        document.getElementById("loginStatus").innerText = "Login successful!";
+        loadConfessions();
+      } catch (error) {
+        document.getElementById("loginStatus").innerText = "Login failed.";
+        console.error(error);
+      }
+    });
+
+    async function loadConfessions() {
+      document.getElementById("confessions").style.display = "block";
+      const q = query(collection(db, "confessions"), orderBy("timestamp", "desc"));
+      const snapshot = await getDocs(q);
+      const list = document.getElementById("confessionList");
+      list.innerHTML = "";
+      snapshot.forEach(docSnap => {
+        const li = document.createElement("li");
+        li.textContent = docSnap.data().text + " ";
+        const btn = document.createElement("button");
+        btn.textContent = "Delete";
+        btn.onclick = async () => {
+          await deleteDoc(doc(db, "confessions", docSnap.id));
+          loadConfessions();
+        };
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
