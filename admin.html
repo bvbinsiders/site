@@ -1,72 +1,116 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Admin - BVBInsiders</title>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <title>Confession Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .hidden { display: none; }
+    .confession { 
+      border: 1px solid #ccc; 
+      padding: 10px; 
+      margin-bottom: 10px; 
+      border-radius: 5px; 
+    }
+    button { background: red; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+  </style>
 </head>
 <body>
-  <h1>Admin Confessions</h1>
-  <input type="email" id="email" placeholder="Admin Email"><br>
-  <input type="password" id="password" placeholder="Admin Password"><br>
-  <button id="loginBtn">Login</button>
-  <p id="loginStatus"></p>
+  <h1>Confession Admin Panel</h1>
 
-  <div id="confessions" style="display:none;">
-    <h2>All Confessions</h2>
-    <ul id="confessionList"></ul>
+  <!-- Login Form -->
+  <div id="loginDiv">
+    <input type="email" id="email" placeholder="Admin Email"><br><br>
+    <input type="password" id="password" placeholder="Password"><br><br>
+    <button id="loginBtn">Login</button>
+    <p id="loginError" style="color:red;"></p>
   </div>
 
+  <!-- Confession List -->
+  <div id="adminDiv" class="hidden">
+    <button id="logoutBtn">Logout</button>
+    <h2>All Confessions</h2>
+    <div id="confessionsList"></div>
+  </div>
+
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, deleteDoc, doc, orderBy, query } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyC4tGaHW1D3BUkKPsp46PVeXbcVjozLbjc",
       authDomain: "bvbinsiders.firebaseapp.com",
       projectId: "bvbinsiders",
-      storageBucket: "bvbinsiders.appspot.com",
+      storageBucket: "bvbinsiders.firebasestorage.app",
       messagingSenderId: "611204497520",
       appId: "1:611204497520:web:a12419c7f0ff81e019f4b5",
       measurementId: "G-PM701CN1FR"
     };
 
+    // Init Firebase
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    document.getElementById("loginBtn").addEventListener("click", async () => {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+    // Elements
+    const loginDiv = document.getElementById("loginDiv");
+    const adminDiv = document.getElementById("adminDiv");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const confessionsList = document.getElementById("confessionsList");
+    const loginError = document.getElementById("loginError");
+
+    // Login
+    loginBtn.addEventListener("click", async () => {
       try {
-        await signInWithEmailAndPassword(auth, email, password);
-        document.getElementById("loginStatus").innerText = "Login successful!";
-        loadConfessions();
+        await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
       } catch (error) {
-        document.getElementById("loginStatus").innerText = "Login failed.";
-        console.error(error);
+        loginError.textContent = error.message;
       }
     });
 
+    // Logout
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+    });
+
+    // Auth State Change
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        loginDiv.classList.add("hidden");
+        adminDiv.classList.remove("hidden");
+        loadConfessions();
+      } else {
+        loginDiv.classList.remove("hidden");
+        adminDiv.classList.add("hidden");
+      }
+    });
+
+    // Load Confessions
     async function loadConfessions() {
-      document.getElementById("confessions").style.display = "block";
-      const q = query(collection(db, "confessions"), orderBy("timestamp", "desc"));
-      const snapshot = await getDocs(q);
-      const list = document.getElementById("confessionList");
-      list.innerHTML = "";
-      snapshot.forEach(docSnap => {
-        const li = document.createElement("li");
-        li.textContent = docSnap.data().text + " ";
-        const btn = document.createElement("button");
-        btn.textContent = "Delete";
-        btn.onclick = async () => {
-          await deleteDoc(doc(db, "confessions", docSnap.id));
-          loadConfessions();
-        };
-        li.appendChild(btn);
-        list.appendChild(li);
+      confessionsList.innerHTML = "";
+      const querySnapshot = await getDocs(collection(db, "confessions"));
+      querySnapshot.forEach((docSnap) => {
+        const div = document.createElement("div");
+        div.className = "confession";
+        div.innerHTML = `
+          <p>${docSnap.data().text}</p>
+          <button onclick="deleteConfession('${docSnap.id}')">Delete</button>
+        `;
+        confessionsList.appendChild(div);
       });
     }
+
+    // Delete Confession
+    window.deleteConfession = async (id) => {
+      await deleteDoc(doc(db, "confessions", id));
+      loadConfessions();
+    };
   </script>
 </body>
 </html>
