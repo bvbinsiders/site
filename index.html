@@ -1,54 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>BVBInsiders Confessions</title>
-  <meta charset="UTF-8" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BVB Insiders - Confess</title>
+<style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .container { background: white; padding: 20px; border-radius: 10px; max-width: 400px; width: 100%; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    h2 { text-align: center; }
+    textarea { width: 100%; height: 100px; padding: 10px; margin-bottom: 10px; resize: none; }
+    button { width: 100%; padding: 10px; background: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+</style>
 </head>
 <body>
-  <h1>Submit Your Confession</h1>
-  <textarea id="confessionText" placeholder="Write your confession here..." rows="6" cols="40"></textarea><br>
-  <button id="submitBtn">Submit</button>
-  <p id="status"></p>
+<div class="container">
+    <h2>Anonymous Confession</h2>
+    <textarea id="confessionInput" placeholder="Write your confession here..."></textarea>
+    <button onclick="submitConfession()">Submit</button>
+    <p id="status"></p>
+</div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC4tGaHW1D3BUkKPsp46PVeXbcVjozLbjc",
-      authDomain: "bvbinsiders.firebaseapp.com",
-      projectId: "bvbinsiders",
-      storageBucket: "bvbinsiders.appspot.com",
-      messagingSenderId: "611204497520",
-      appId: "1:611204497520:web:a12419c7f0ff81e019f4b5",
-      measurementId: "G-PM701CN1FR"
-    };
+const firebaseConfig = {
+    apiKey: "AIzaSyC4tGaHW1D3BUkKPsp46PVeXbcVjozLbjc",
+    authDomain: "bvbinsiders.firebaseapp.com",
+    projectId: "bvbinsiders",
+    storageBucket: "bvbinsiders.appspot.com",
+    messagingSenderId: "611204497520",
+    appId: "1:611204497520:web:a12419c7f0ff81e019f4b5"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    document.getElementById("submitBtn").addEventListener("click", async () => {
-      const text = document.getElementById("confessionText").value.trim();
-      if (!text) {
-        document.getElementById("status").innerText = "Please write something!";
+async function submitConfession() {
+    const text = document.getElementById("confessionInput").value.trim();
+    const status = document.getElementById("status");
+    if (!text) {
+        status.textContent = "Please write something!";
+        status.style.color = "red";
         return;
-      }
+    }
 
-      try {
+    try {
         await addDoc(collection(db, "confessions"), {
-          text: text,
-          timestamp: serverTimestamp()
+            text: text,
+            timestamp: serverTimestamp()
         });
-        document.getElementById("status").innerText = "Confession submitted!";
-        document.getElementById("confessionText").value = "";
-      } catch (error) {
+        status.textContent = "Confession submitted!";
+        status.style.color = "green";
+        document.getElementById("confessionInput").value = "";
+    } catch (error) {
+        status.textContent = "Error submitting confession.";
+        status.style.color = "red";
         console.error(error);
-        document.getElementById("status").innerText = "Error submitting confession.";
-      }
-    });
-  </script>
-
-<a href="admin.html">admin page</a>
-  
+    }
+}
+</script>
 </body>
 </html>
