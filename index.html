@@ -1,66 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BVB Insiders - Confess</title>
-<style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .container { background: white; padding: 20px; border-radius: 10px; max-width: 400px; width: 100%; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-    h2 { text-align: center; }
-    textarea { width: 100%; height: 100px; padding: 10px; margin-bottom: 10px; resize: none; }
-    button { width: 100%; padding: 10px; background: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; }
+  <meta charset="UTF-8">
+  <title>BVB Insiders - Confessions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f5f5; text-align: center; padding: 20px; }
+    form { background: white; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    textarea { width: 100%; height: 120px; padding: 10px; resize: none; border: 1px solid #ccc; border-radius: 5px; }
+    button { margin-top: 10px; padding: 10px 15px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; }
     button:hover { background: #0056b3; }
-</style>
+  </style>
 </head>
 <body>
-<div class="container">
-    <h2>Anonymous Confession</h2>
-    <textarea id="confessionInput" placeholder="Write your confession here..."></textarea>
-    <button onclick="submitConfession()">Submit</button>
-    <p id="status"></p>
-</div>
+  <h1>BVB Insiders</h1>
+  <p>Drop your anonymous confession below 👇</p>
+  <form id="confessionForm">
+    <textarea id="confessionText" placeholder="Type your confession..." required></textarea>
+    <button type="submit">Submit</button>
+  </form>
+  
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-<!-- Firebase -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4tGaHW1D3BUkKPsp46PVeXbcVjozLbjc",
+      authDomain: "bvbinsiders.firebaseapp.com",
+      projectId: "bvbinsiders",
+      storageBucket: "bvbinsiders.firebasestorage.app",
+      messagingSenderId: "611204497520",
+      appId: "1:611204497520:web:a12419c7f0ff81e019f4b5",
+      measurementId: "G-PM701CN1FR"
+    };
 
-const firebaseConfig = {
-    apiKey: "AIzaSyC4tGaHW1D3BUkKPsp46PVeXbcVjozLbjc",
-    authDomain: "bvbinsiders.firebaseapp.com",
-    projectId: "bvbinsiders",
-    storageBucket: "bvbinsiders.appspot.com",
-    messagingSenderId: "611204497520",
-    appId: "1:611204497520:web:a12419c7f0ff81e019f4b5"
-};
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    document.getElementById("confessionForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = document.getElementById("confessionText").value.trim();
+      if (!text) return alert("Please enter a confession");
 
-async function submitConfession() {
-    const text = document.getElementById("confessionInput").value.trim();
-    const status = document.getElementById("status");
-    if (!text) {
-        status.textContent = "Please write something!";
-        status.style.color = "red";
-        return;
-    }
-
-    try {
+      try {
         await addDoc(collection(db, "confessions"), {
-            text: text,
-            timestamp: serverTimestamp()
+          text: text,
+          timestamp: serverTimestamp()
         });
-        status.textContent = "Confession submitted!";
-        status.style.color = "green";
-        document.getElementById("confessionInput").value = "";
-    } catch (error) {
-        status.textContent = "Error submitting confession.";
-        status.style.color = "red";
-        console.error(error);
-    }
-}
-</script>
+        alert("Confession submitted!");
+        document.getElementById("confessionText").value = "";
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    });
+  </script>
 </body>
 </html>
