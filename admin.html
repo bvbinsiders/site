@@ -31,60 +31,61 @@
 
 <!-- Firebase -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const firebaseConfig = {
+  // Your Firebase config
+  const firebaseConfig = {
     apiKey: "AIzaSyC4tGaHW1D3BUkKPsp46PVeXbcVjozLbjc",
     authDomain: "bvbinsiders.firebaseapp.com",
     projectId: "bvbinsiders",
-    storageBucket: "bvbinsiders.appspot.com",
+    storageBucket: "bvbinsiders.firebasestorage.app",
     messagingSenderId: "611204497520",
-    appId: "1:611204497520:web:a12419c7f0ff81e019f4b5"
-};
+    appId: "1:611204497520:web:a12419c7f0ff81e019f4b5",
+    measurementId: "G-PM701CN1FR"
+  };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+  // Init
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-async function login() {
+  // Login
+  document.getElementById("loginBtn").addEventListener("click", async (e) => {
+    e.preventDefault();
     const email = document.getElementById("email").value;
-    const pass = document.getElementById("password").value;
-    const status = document.getElementById("loginStatus");
+    const password = document.getElementById("password").value;
 
     try {
-        await signInWithEmailAndPassword(auth, email, pass);
-        status.textContent = "Login successful!";
-        status.style.color = "green";
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("confessionsBox").style.display = "block";
-        loadConfessions();
+      await signInWithEmailAndPassword(auth, email, password);
+      alert("Logged in successfully!");
+      loadConfessions();
     } catch (error) {
-        status.textContent = "Login failed!";
-        status.style.color = "red";
+      alert(error.message);
     }
-}
+  });
 
-async function loadConfessions() {
+  // Load confessions (only if admin logged in)
+  async function loadConfessions() {
+    const snapshot = await getDocs(collection(db, "confessions"));
     const list = document.getElementById("confessionList");
     list.innerHTML = "";
-    const querySnapshot = await getDocs(collection(db, "confessions"));
-    querySnapshot.forEach(docSnap => {
-        const div = document.createElement("div");
-        div.classList.add("confession");
-        div.innerHTML = `
-            <p>${docSnap.data().text}</p>
-            <button class="delete" onclick="deleteConfession('${docSnap.id}')">Delete</button>
-        `;
-        list.appendChild(div);
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const li = document.createElement("li");
+      li.textContent = data.text;
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "Delete";
+      delBtn.onclick = async () => {
+        await deleteDoc(doc(db, "confessions", docSnap.id));
+        li.remove();
+      };
+      li.appendChild(delBtn);
+      list.appendChild(li);
     });
-}
-
-window.deleteConfession = async function(id) {
-    await deleteDoc(doc(db, "confessions", id));
-    loadConfessions();
-};
+  }
 </script>
+
 </body>
 </html>
