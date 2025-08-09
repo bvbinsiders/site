@@ -1,91 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BVB Insiders - Admin</title>
-<style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
-    .login, .confessions { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-    h2 { text-align: center; }
-    input, button { width: 100%; padding: 10px; margin-bottom: 10px; }
-    .confession { background: #eee; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
-    button.delete { background: red; color: white; border: none; cursor: pointer; }
-    button.delete:hover { background: darkred; }
-</style>
+  <meta charset="UTF-8">
+  <title>Admin - BVB Insiders</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
+    #loginForm, #adminPanel { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    ul { list-style: none; padding: 0; }
+    li { background: #fafafa; padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+    .deleteBtn { background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+  </style>
 </head>
 <body>
-
-<div class="login" id="loginBox">
+  <div id="loginForm">
     <h2>Admin Login</h2>
     <input type="email" id="email" placeholder="Email">
     <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-    <p id="loginStatus"></p>
-</div>
+    <button id="loginBtn">Login</button>
+  </div>
 
-<div class="confessions" id="confessionsBox" style="display:none;">
-    <h2>All Confessions</h2>
-    <div id="confessionList"></div>
-</div>
+  <div id="adminPanel" style="display:none;">
+    <h2>Confessions</h2>
+    <ul id="confessionList"></ul>
+    <button id="logoutBtn">Logout</button>
+  </div>
 
-<!-- Firebase -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, deleteDoc, doc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // Your Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyC4tGaHW1D3BUkKPsp46PVeXbcVjozLbjc",
-    authDomain: "bvbinsiders.firebaseapp.com",
-    projectId: "bvbinsiders",
-    storageBucket: "bvbinsiders.firebasestorage.app",
-    messagingSenderId: "611204497520",
-    appId: "1:611204497520:web:a12419c7f0ff81e019f4b5",
-    measurementId: "G-PM701CN1FR"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4tGaHW1D3BUkKPsp46PVeXbcVjozLbjc",
+      authDomain: "bvbinsiders.firebaseapp.com",
+      projectId: "bvbinsiders",
+      storageBucket: "bvbinsiders.firebasestorage.app",
+      messagingSenderId: "611204497520",
+      appId: "1:611204497520:web:a12419c7f0ff81e019f4b5",
+      measurementId: "G-PM701CN1FR"
+    };
 
-  // Init
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-  // Login
-  document.getElementById("loginBtn").addEventListener("click", async (e) => {
-    e.preventDefault();
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      alert("Logged in successfully!");
-      loadConfessions();
-    } catch (error) {
-      alert(error.message);
-    }
-  });
-
-  // Load confessions (only if admin logged in)
-  async function loadConfessions() {
-    const snapshot = await getDocs(collection(db, "confessions"));
-    const list = document.getElementById("confessionList");
-    list.innerHTML = "";
-    snapshot.forEach((docSnap) => {
-      const data = docSnap.data();
-      const li = document.createElement("li");
-      li.textContent = data.text;
-      const delBtn = document.createElement("button");
-      delBtn.textContent = "Delete";
-      delBtn.onclick = async () => {
-        await deleteDoc(doc(db, "confessions", docSnap.id));
-        li.remove();
-      };
-      li.appendChild(delBtn);
-      list.appendChild(li);
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        alert("Login failed: " + err.message);
+      }
     });
-  }
-</script>
 
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        document.getElementById("loginForm").style.display = "none";
+        document.getElementById("adminPanel").style.display = "block";
+        loadConfessions();
+      } else {
+        document.getElementById("loginForm").style.display = "block";
+        document.getElementById("adminPanel").style.display = "none";
+      }
+    });
+
+    async function loadConfessions() {
+      const q = query(collection(db, "confessions"), orderBy("timestamp", "desc"));
+      const snapshot = await getDocs(q);
+      const list = document.getElementById("confessionList");
+      list.innerHTML = "";
+      snapshot.forEach((docSnap) => {
+        const li = document.createElement("li");
+        li.textContent = docSnap.data().text;
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Delete";
+        delBtn.className = "deleteBtn";
+        delBtn.onclick = async () => {
+          await deleteDoc(doc(db, "confessions", docSnap.id));
+          li.remove();
+        };
+        li.appendChild(delBtn);
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
+  </script>
 </body>
 </html>
